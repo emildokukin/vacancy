@@ -2,24 +2,30 @@ class Api::V1::JobsController < ApplicationController
   before_action :set_job, only: [ :show, :update, :destroy ]
 
   def index
-    if params[:company_id]
-      @jobs = Company.find(params[:company_id]).jobs
-    else
-      @jobs = Job.all
-    end
-    render json: { jobs: @jobs }, except: [ :id, :created_at, :updated_at ]
+
+    @jobs = Job.all
+
+    # Фильтр по имени
+    @jobs = @jobs.where('name LIKE ?', "%#{params[:name]}%") if params[:name].present?
+
+    # Фильтр по расположению
+    @jobs = @jobs.where('place LIKE ?', "%#{params[:place]}%") if params[:place].present?
+
+    # Фильтр по company_id
+    @jobs = @jobs.where(company_id: params[:company_id]) if params[:company_id].present?
+
+    render json: @jobs
   end
 
   def show
     render json: @job
   end
 
-  # POST /jobs
   def create
     @job = Job.new(job_params)
 
     if @job.save!
-      render json: @job.as_json, status: :created
+      render json: @job, status: :created
     else
       render json: { job: @job.errors, status: :no_content }
     end

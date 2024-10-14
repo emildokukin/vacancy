@@ -1,6 +1,6 @@
 class Api::V1::GeeksController < ApplicationController
 
-  before_action :set_geek, only: [:show, :update, :destroy, :applications, :invitations, :attach_resume]
+  before_action :set_geek, only: [:show, :update, :destroy ]
 
   def index
     @geeks = Geek.all
@@ -9,7 +9,10 @@ class Api::V1::GeeksController < ApplicationController
     @geeks = @geeks.where('name LIKE ?', "%#{params[:name]}%") if params[:name].present?
 
     # Фильтр по стеку технологий
-    @geeks = @geeks.where('tech_stack LIKE ?', "%#{params[:tech_stack]}%") if params[:tech_stack].present?
+    @geeks = @geeks.where('stack LIKE ?', "%#{params[:stack]}%") if params[:stack].present?
+
+    # Фильтр по стеку технологий
+    @geeks = @geeks.where('resume LIKE ?', "%#{params[:resume]}%") if params[:resume].present?
 
     render json: @geeks
   end
@@ -39,27 +42,22 @@ class Api::V1::GeeksController < ApplicationController
 
   # DELETE /geeks/:id - удаление соискателя администратором
   def destroy
-    @geek.destroy
-    render json: { message: 'Соискатель удален' }, status: :ok
+    @geek = Geek.find(params[:id])
+    @geek .destroy
+    render json: @geek
   end
 
-  # GET /geeks/:id/applications - все заявления одного соискателя
-  def applications
-    render json: @geek.applications
+  def applies_for_geek
+    @geeksByJobId = Geek.joins(:applies).where(applies: { job_id: params[:job_id] })
+
+    render json: @geeksByJobId
   end
 
-  # GET /geeks/:id/invitations - все приглашения соискателя
-  def invitations
-    render json: @geek.invitations
-  end
 
-  # PUT /geeks/:id/attach_resume - прикрепление резюме к соискателю
-  def attach_resume
-    if @geek.update(resume: params[:resume])
-      render json: { message: 'Резюме успешно прикреплено' }, status: :ok
-    else
-      render json: { errors: @geek.errors.full_messages }, status: :unprocessable_entity
-    end
+  def geeks_for_company
+    @geeksByCompanyid = Geek.joins(jobs: :company).where(companies: { id: params[:company_id] }).distinct
+
+    render json: @geeksByCompanyid
   end
 
   private

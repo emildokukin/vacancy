@@ -1,16 +1,19 @@
 Rails.application.routes.draw do
-  # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
 
   scope module: "api" do
     namespace :v1 do
       resources :jobs
-      resources :geeks
-      resources :applies
+      resources :geeks do
+        get "job/:job_id", to: "geeks#applies_for_geek", on: :collection
+        get "company/:company_id", to: "geeks#geeks_for_company", on: :collection
+      end
+      resources :applies do
+        get "company/:company_id", to: "applies#applies_for_company", on: :collection
+      end
       resources :companies do
-        match 'mark_deleted', to: 'companies/mark_deleted', via: :put
         resources :jobs
       end
-      match '/:id/mark_deleted', to: 'companies#mark_deleted', via: :put
+
     end
   end
 
